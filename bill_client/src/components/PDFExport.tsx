@@ -233,7 +233,7 @@ const ExportToPDF: React.FC<ExportToPDFProps> = ({
     // PDF dimensions
     const pdfWidth = 595.28;
     const pdfHeight = 841.89;
-    const margin = 10;
+    const margin = 5;
     const topMargin = 2;
     const availableWidth = pdfWidth - (margin * 2);
     const availableHeight = pdfHeight - topMargin - margin;

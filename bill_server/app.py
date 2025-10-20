@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_cors import CORS
-from resources.pymupdf_api import blp as pdf_text_extraction_blueprint
+from resources.verizonbus_api import blp as pdf_text_extraction_blueprint
 
 app = Flask(__name__)
 

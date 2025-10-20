@@ -21,7 +21,93 @@
             "start": 1,
             "end": 10
           },
-          "sub_key": []
+          "sub_key": [
+            {
+              "keyword": "BUS UNL Pro 5G Smartphone",
+              "name": "BUS UNL Pro 5G Smartphone",
+              "ukey": "5gsmartphone",
+              "search_range": {},
+              "allowMultiple": true,              
+              "category": "Plan"                     
+            },
+            {
+              "keyword": "5G Smartphone Refund",
+              "name": "BUS UNL Pro 5G Smartphone Refund",
+              "ukey": "5gsmartphonerefund",
+              "search_range": {},
+              "category": "Plan"
+            },
+            {
+              "keyword": "25% Off Line Access Charge 12M",
+              "name": "25% Off Line Access Charge 12M",
+              "ukey": "accesscharge12m",
+              "search_range": {},
+              "hasExpiration": true,
+              "allowMultiple": true,             
+              "category": "Plan"
+            },
+            {
+              "keyword": "Access Charge 12M - Reversal",
+              "name": "25% Off Line Access Charge 12M - Reversal",
+              "ukey": "accesscharge12mreversal",
+              "search_range": {},
+              "hasExpiration": true,
+              "category": "Plan"
+            },
+            {
+              "keyword": "My Biz Plan",
+              "name": "My Biz Plan",
+              "ukey": "mybizplan",
+              "search_range": {},  
+              "allowMultiple": true,            
+              "category": "Plan"
+            },
+            {
+              "keyword": "Plan Introductory Offer",
+              "name": "My Biz Plan Introductory Offer",
+              "ukey": "mybizplanintro",
+              "search_range": {},
+              "hasExpiration": true,
+              "allowMultiple": true,
+              "category": "Plan"
+            },
+            {
+              "keyword": "Total Mobile Protect Business",
+              "name": "Total Mobile Protect Business",
+              "ukey": "totalmobprotectbus",             
+              "search_range": {},   
+              "allowMultiple": true,           
+              "category": "Features & Add-Ons"
+            },
+            {
+              "keyword": "Business Mobile Secure Plus",
+              "name": "Business Mobile Secure Plus",
+              "ukey": "busmobsecureplus",
+              "search_range": {},
+              "category": "Features & Add-Ons"
+            },
+            {
+              "keyword": "Premium Network Experience",
+              "name": "Premium Network Experience",
+              "ukey": "premiumnetworkexp",
+              "search_range": {},
+              "category": "Features & Add-Ons"
+            },
+            {
+              "keyword": "50GB Mobile Hotspot",
+              "name": "50GB Mobile Hotspot",
+              "ukey": "50gbmobilehotspot",
+              "search_range": {},
+              "category": "Features & Add-Ons"
+            },
+            {
+              "keyword": "Wideband Access",
+              "name": "5G Ultra Wideband Access",
+              "ukey": "widebandaccess",
+              "search_range": {},
+              "category": "Features & Add-Ons"
+            }
+          ]
         },
         {
           "keyword": "Equipment Charges",

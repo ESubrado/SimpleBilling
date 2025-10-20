@@ -122,10 +122,7 @@ const IndividualDetails: React.FC<IndividualDetailsProps> = ({
                 
                 {/* Money amounts */}
                 {entry.money_amounts && entry.money_amounts.length > 0 ? (
-                  <div className="space-y-2">
-                    <Typography variant="body2" fontWeight={500} sx={{ mb: 1, color: '#9ca3af' }}>
-                      Charges:
-                    </Typography>
+                  <div className="space-y-2">                   
                     {entry.money_amounts.map((money: MoneyAmount, moneyIndex: number) => (
                       <div key={`money-${index}-${moneyIndex}`} className="space-y-1">
                         {/* Add divider before total ukey */}
@@ -140,8 +137,8 @@ const IndividualDetails: React.FC<IndividualDetailsProps> = ({
                               variant="body2" 
                               sx={{ 
                                 flex: 1,
-                                fontWeight: money.ukey === 'total' ? 600 : 'normal',
-                                color: 'white'
+                                fontWeight: 600,
+                                color: 'white'                                
                               }}
                             >
                               {money.name || money.keyword || 'Charge'}                               
@@ -149,7 +146,7 @@ const IndividualDetails: React.FC<IndividualDetailsProps> = ({
                             </Typography>
                             <Typography 
                               variant="body2" 
-                              fontWeight={money.ukey === 'total' ? 600 : 500}
+                              fontWeight={600}
                               sx={{ color: 'white' }}
                             >
                               {money.amount}
@@ -157,93 +154,174 @@ const IndividualDetails: React.FC<IndividualDetailsProps> = ({
                           </div>
                         )}
                         
-                        {/* If sub_keys exist, show parent keyword as section header */}
+                        {/* If sub_keys exist, show parent keyword as section header with amount */}
                         {money.sub_keys && money.sub_keys.length > 0 && (
                           <>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                fontWeight: 500,
-                                color: 'white',
-                                mb: 1
-                              }}
-                            >
-                              {money.name || money.keyword || 'Charge Details'}:
-                            </Typography>
+                            {/* Parent keyword with amount on the same line */}
+                            <div className="flex justify-between items-center mb-2">
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  fontWeight: 600,
+                                  color: 'white',
+                                  flex: 1
+                                }}
+                              >
+                                {money.name || money.keyword || 'Charge Details'}: {money.ukey === 'total' && entry.phone ? " for " + entry.phone : ''}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                fontWeight={600}
+                                sx={{ color: 'white' }}
+                              >
+                                {money.amount}
+                              </Typography>
+                            </div>
                             
                             <div className="ml-4 space-y-1 border-l-2 border-gray-600 pl-3">
                               {/* Sub keys */}
-                              {money.sub_keys.map((subKey: any, subIndex: number) => (
-                                <div key={`subkey-${index}-${moneyIndex}-${subIndex}`} className="space-y-1">
-                                  {/* Sub key charge */}
-                                  <div className="flex justify-between items-center">
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        flex: 1,
-                                        color: '#d1d5db',
-                                        fontSize: '0.75rem'
-                                      }}
-                                    >
-                                      {subKey.name || subKey.keyword || 'Sub Item'}
-                                      {subKey.installment && subKey.installment.trim() !== '' ? ` (${subKey.installment})` : ""}
-                                    </Typography>
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        color: '#d1d5db',
-                                        fontSize: '0.75rem'
-                                      }}
-                                    >
-                                      {subKey.amount || 'N/A'}
-                                    </Typography>
-                                  </div>
-                                  
-                                  {/* Sub key text (if exists) */}
-                                  {subKey.text && (
-                                    <div className="ml-3 border-l border-gray-700 pl-2">
-                                      <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                          color: '#9ca3af',
-                                          fontSize: '0.7rem',
-                                          fontStyle: 'italic',
-                                          display: 'block'
-                                        }}
-                                      >
-                                        Text: {subKey.text}
-                                      </Typography>
+                              {(() => {
+                                // Group sub keys by category
+                                const categorizedSubKeys = money.sub_keys.reduce((acc: any, subKey: any) => {
+                                  const category = subKey.category && subKey.category.trim() !== '' ? subKey.category : 'uncategorized';
+                                  if (!acc[category]) {
+                                    acc[category] = [];
+                                  }
+                                  acc[category].push(subKey);
+                                  return acc;
+                                }, {});
+
+                                // Check if we have any actual categories (not just uncategorized)
+                                const hasCategories = Object.keys(categorizedSubKeys).some(key => key !== 'uncategorized');
+
+                                if (!hasCategories && categorizedSubKeys.uncategorized) {
+                                  // No categories - display normally
+                                  return categorizedSubKeys.uncategorized.map((subKey: any, subIndex: number) => (
+                                    <div key={`subkey-${index}-${moneyIndex}-${subIndex}`} className="space-y-1">
+                                      {/* Sub key charge in three columns with custom widths */}
+                                      <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 items-center">
+                                        {/* Column 1: Keyword with installment and expiration (wider) */}
+                                        <Typography 
+                                          variant="caption" 
+                                          sx={{ 
+                                            color: '#d1d5db',
+                                            fontSize: '0.75rem',
+                                            textAlign: 'left'
+                                          }}
+                                        >
+                                          {subKey.name || subKey.keyword || 'Sub Item'}                                     
+                                          {subKey.installment && subKey.installment.trim() !== '' ? ` (${subKey.installment})` : ""}
+                                          {subKey.expiration && subKey.expiration.trim() !== '' ? ` (${subKey.expiration})` : ""}
+                                        </Typography>
+                                        
+                                        {/* Column 2: Date Range (narrower) */}
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            color: '#9ca3af',
+                                            fontSize: '0.75rem',
+                                            textAlign: 'center',
+                                            fontStyle: 'italic'
+                                          }}
+                                        >
+                                          {subKey.date_range && subKey.date_range.trim() !== '' ? subKey.date_range : " "}
+                                        </Typography>
+                                        
+                                        {/* Column 3: Amount (narrower) */}
+                                        <Typography 
+                                          variant="caption" 
+                                          sx={{ 
+                                            color: '#d1d5db',
+                                            fontSize: '0.75rem',
+                                            textAlign: 'right'
+                                          }}
+                                        >
+                                          {subKey.amount || 'N/A'}
+                                        </Typography>
+                                      </div>                                 
                                     </div>
-                                  )}
-                                </div>
-                              ))}
-                              
-                              {/* Add divider before total */}
-                              <Divider sx={{ my: 1, borderColor: '#6b7280' }} />
-                              
-                              {/* Parent amount as Total at the end */}
-                              <div className="flex justify-between items-center">
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    flex: 1,
-                                    color: 'white',
-                                    fontWeight: 500
-                                  }}
-                                >
-                                  Total
-                                  {money.ukey === 'total' && entry.phone ? " for " + entry.phone : ''} 
-                                </Typography>
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    color: 'white',
-                                    fontWeight: 500
-                                  }}
-                                >
-                                  {money.amount}
-                                </Typography>
-                              </div>
+                                  ));
+                                } else {
+                                  // Has categories - display with category divisions
+                                  return Object.entries(categorizedSubKeys).map(([category, subKeys]: [string, any], categoryIndex: number) => (
+                                    <div key={`category-${category}-${index}-${moneyIndex}`} className="space-y-2" style={{ 
+                                      marginBottom: '6px',
+                                      paddingBottom: '6px'
+                                    }}>
+                                      {/* Category header (only if not uncategorized) */}
+                                      {category !== 'uncategorized' && (
+                                        <Typography 
+                                          variant="caption" 
+                                          sx={{ 
+                                            color: '#fbbf24',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            textTransform: 'capitalize',
+                                            display: 'block',
+                                            borderBottom: '1px solid #374151',
+                                            paddingBottom: '4px',
+                                            marginBottom: '12px'
+                                          }}
+                                        >
+                                          {category}
+                                        </Typography>
+                                      )}
+                                      
+                                      {/* Sub keys for this category */}
+                                      <div style={{ paddingBottom: '6px' }}>
+                                        {subKeys.map((subKey: any, subIndex: number) => (
+                                          <div key={`subkey-${category}-${index}-${moneyIndex}-${subIndex}`} className="space-y-1" style={{ 
+                                            marginBottom: subIndex < subKeys.length - 1 ? '6px' : '0',
+                                            paddingBottom: subIndex === subKeys.length - 1 ? '8px' : '0'
+                                          }}>
+                                            {/* Sub key charge in three columns with custom widths */}
+                                            <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 items-center">
+                                              {/* Column 1: Keyword with installment and expiration (wider) */}
+                                              <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                  color: '#d1d5db',
+                                                  fontSize: '0.75rem',
+                                                  textAlign: 'left'
+                                                }}
+                                              >
+                                                {subKey.name || subKey.keyword || 'Sub Item'}                                     
+                                                {subKey.installment && subKey.installment.trim() !== '' ? ` (${subKey.installment})` : ""}
+                                                {subKey.expiration && subKey.expiration.trim() !== '' ? ` (${subKey.expiration})` : ""}
+                                              </Typography>
+                                              
+                                              {/* Column 2: Date Range (narrower) */}
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  color: '#9ca3af',
+                                                  fontSize: '0.75rem',
+                                                  textAlign: 'center',
+                                                  fontStyle: 'italic'
+                                                }}
+                                              >
+                                                {subKey.date_range && subKey.date_range.trim() !== '' ? subKey.date_range : " "}
+                                              </Typography>
+                                              
+                                              {/* Column 3: Amount (narrower) */}
+                                              <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                  color: '#d1d5db',
+                                                  fontSize: '0.75rem',
+                                                  textAlign: 'right'
+                                                }}
+                                              >
+                                                {subKey.amount || 'N/A'}
+                                              </Typography>
+                                            </div>                                 
+                                          </div>
+                                        ))}
+                                      </div> 
+                                    </div>
+                                  ));
+                                }
+                              })()}
                             </div>
                           </>
                         )} 
