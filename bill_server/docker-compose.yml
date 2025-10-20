@@ -1,0 +1,33 @@
+services:
+  pdf-text-extraction-api:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude virtual env from volume mount
+      - /app/__pycache__  # Exclude pycache from volume mount
+    restart: unless-stopped
+    command: python app.py
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    develop:
+      watch:
+        - action: sync
+          path: ./
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+            - .git/
+        - action: rebuild
+          path: requirements.txt

@@ -1,0 +1,30 @@
+services:
+  pdf-text-extraction-api-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - /app/.venv
+      - /app/__pycache__
+    restart: unless-stopped
+    command: python app.py
+    develop:
+      watch:
+        - action: sync
+          path: ./
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+            - .git/
+            - node_modules/
+        - action: rebuild
+          path: requirements.txt

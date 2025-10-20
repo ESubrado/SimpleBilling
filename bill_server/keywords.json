@@ -1,0 +1,285 @@
+{
+  "verizon": {
+    "name": "Verizon Business",
+    "keyword": "verizon.com/business",
+    "settings": {
+      "exclude_keywords": [
+        "in",
+        "pay",
+        "auto",
+        "device",
+        "other fees",
+        "other charges",
+        "Access Adjustment"
+      ],
+      "required_keywords": [
+        {
+          "keyword": "Monthly Charges",
+          "name": "Monthly Service Charges",
+          "ukey": "monthly",
+          "search_range": {
+            "start": 1,
+            "end": 10
+          },
+          "sub_key": []
+        },
+        {
+          "keyword": "Equipment Charges",
+          "name": "Equipment & Device Charges",
+          "ukey": "equipment",
+          "search_range": {
+            "start": 1,
+            "end": 10
+          },
+          "sub_key": [
+            {
+              "keyword": "Device Payment Agreement",
+              "name": "Device Payment Agreement",
+              "ukey": "devpaymentagreement",
+              "search_range": {},
+              "isInstallment": true
+            },
+            {
+              "keyword": "Device Promo Credit",
+              "name": "Trade-In Device Promo Credit",
+              "ukey": "tradeindevicepromocredit",
+              "search_range":{}
+            },
+            {
+              "keyword": "State Sales Tax (one-time",
+              "name": "State Sales Tax",
+              "ukey": "statesalestaxeq",
+              "search_range": {},
+              "keyword_pattern": "'State\\s+Sales\\s+Tax\\s*\\([^)]*\\)'",
+              "isInstallment": true
+            },
+            {
+              "keyword": "Device Promotional Credit",
+              "name": "Device Promotional Credit",
+              "ukey": "devicepromotionalcredit",
+              "search_range": {}
+            }            
+          ]
+        },
+        {
+          "keyword": "Usage and Purchase Charges",
+          "name": "Usage & Purchase Charges",
+          "ukey": "usage",
+          "search_range": {
+            "start": 1,
+            "end": 10
+          },
+          "sub_key": []
+        },
+        {
+          "keyword": "Surcharges and Other Charges",
+          "name": "Surcharges & Other Charges",
+          "ukey": "surcharges",
+          "search_range": {
+            "start": 1,
+            "end": 10
+          },
+          "sub_key": [
+            {
+              "keyword": "Fed Universal Service Charge",
+              "name": "Federal Universal Service Charge",
+              "ukey": "fedservice",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            },
+            {
+              "keyword": "Regulatory Charge",
+              "name": "Regulatory Charges",
+              "ukey": "regulatorycharges",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            },
+            {
+              "keyword": "Administrative Charge",
+              "name": "Administrative Charges",
+              "ukey": "admincharges",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            },
+            {
+              "keyword": "Economic Adjustment Charge",
+              "name": "Economic Adjustment Charge",
+              "ukey": "economicadjustment",
+              "search_range": {}
+            }
+          ]
+        },
+        {
+          "keyword": "Taxes, Governmental Surcharges and Fees",
+          "name": "Taxes & Government Fees",
+          "ukey": "taxes",
+          "search_range": {
+            "start": 1,
+            "end": 10
+          },
+          "sub_key": [
+            {
+              "keyword": "Emerg. Resp. Fee",
+              "name": "Emergency Response Fee",
+              "ukey": "emergencyfee",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            },
+            {
+              "keyword": "Tax-Telco",
+              "name": "Telecommunications Tax",
+              "ukey": "taxtelco",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            },
+            {
+              "keyword": "State Sales Tax",
+              "name": "State Sales Tax",
+              "ukey": "statesalestaxgov",
+              "search_range": {
+                "start": 1,
+                "end": 10
+              }
+            }
+          ]
+        },
+        {
+          "keyword": "Total Current Charges",
+          "name": "Total Current Charges",
+          "ukey": "total",
+          "search_range": {
+            "start": 0,
+            "end": 100
+          },
+          "sub_key": []
+        }
+      ],
+      "inline_sentences": [
+        {
+          "keyword": "Balance Forward",
+          "name": "Previous Balance Forward",
+          "ukey": "balance_forward"
+        },
+        {
+          "keyword": "Monthly charges",
+          "name": "Monthly Service Charges",
+          "ukey": "monthly_charges"
+        },
+        {
+          "keyword": "Equipment charges",
+          "name": "Equipment & Device Charges",
+          "ukey": "equipment_charges"
+        },
+        {
+          "keyword": "Usage & Purchase Charges",
+          "name": "Usage & Purchase Charges",
+          "ukey": "usage_purchase"
+        },
+        {
+          "keyword": "Surcharges and Other charges & credits",
+          "name": "Surcharges & Other Charges",
+          "ukey": "surcharges_credits"
+        },
+        {
+          "keyword": "Taxes, Governmental Surcharges & Fees",
+          "name": "Taxes & Government Surcharges",
+          "ukey": "Taxes_fees"
+        },
+        {
+          "keyword": "Total Current charges due",
+          "name": "Total Current Charges Due",
+          "ukey": "total_charges_due"
+        },
+        {
+          "keyword": "Total Charges",
+          "name": "Total Charges",
+          "ukey": "total_charges"
+        }
+      ],
+      "previous_balance_keywords": [
+        {
+          "keyword": "Previous Balance",
+          "name": "Previous Balance",
+          "ukey": "previous_balance",
+          "header": "h1"
+        },
+        {
+          "keyword": "Payment Received",
+          "name": "Payment Received",
+          "ukey": "payment_received",
+          "header": "paragraph"
+        },
+        {
+          "keyword": "Total Payments",
+          "name": "Total Payments",
+          "ukey": "total_payments",
+          "header": "h2"
+        },
+        {
+          "keyword": "Sales Discretionary Credit",
+          "name": "Sales Discretionary Credit",
+          "ukey": "sales_discretionary_credit",
+          "header": "paragraph"
+        },
+        {
+          "keyword": "Access Adjustment",
+          "name": "Access Adjustments",
+          "ukey": "access_adjustments",
+          "header": "paragraph",
+          "includeContact": true
+        },
+        {
+          "keyword": "Retail Device Trade-In",
+          "name": "Retail Device Trade-In",
+          "ukey": "retail_device_tradein",
+          "header": "paragraph",
+          "includeContact": true
+        },
+        {
+          "keyword": "Other Fees and Surcharges",
+          "name": "Other Fees and Surcharges",
+          "ukey": "other_charges",
+          "header": "paragraph"
+        },
+        {
+          "keyword": "State Tax Adjustment",
+          "name": "State Tax Adjustment",
+          "ukey": "state_tax_adjustment",
+          "header": "paragraph"
+        },
+        {
+          "keyword": "Total Adjustments",
+          "name": "Total Adjustments",
+          "ukey": "total_adjustments",
+          "header": "h2"
+        },
+        {
+          "keyword": "Credit Balance",
+          "name": "Credit Balance",
+          "ukey": "credit_balance",
+          "header": "h2"
+        }
+      ],
+      "account_level_keywords": {
+        "search_term": "Account Level Charges Details",
+        "late_fee_sentence": "Late Fee"
+      }
+    }
+  },
+  "att": {
+  },
+  "comcast": {
+  },
+  "sprint": {
+  }
+}

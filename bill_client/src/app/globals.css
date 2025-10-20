@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.min-h-screen-90 {
+    min-height: calc(100vh - 90px);
+}
