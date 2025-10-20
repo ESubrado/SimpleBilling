@@ -4,7 +4,7 @@
 
 const config = {
   backend: {
-    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000',
+    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://simplebillingbackend.onrender.com',
     endpoints: {
       extractText: '/extract-text',
     }
