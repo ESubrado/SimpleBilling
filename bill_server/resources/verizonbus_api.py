@@ -1073,18 +1073,25 @@ class PDFTextExtractionView(MethodView):
             verizon_keywords = ["verizon.com/business", "verizon"]
             document_valid = False
             
-            for page_num in range(total_pages):
+            # Check first 3 pages for Verizon keywords (bills usually have branding on first few pages)
+            pages_to_check = min(3, total_pages)
+            
+            for page_num in range(pages_to_check):
                 try:
                     page = pdf_document.load_page(page_num)
-                    page_text = page.get_text().lower();
+                    page_text = page.get_text().lower()
                     
+                    # Check for any of the Verizon keywords
                     if any(keyword.lower() in page_text for keyword in verizon_keywords):
                         document_valid = True
+                        print(f"Found Verizon keyword on page {page_num + 1}")
                         break
                         
                 except Exception as e:
                     print(f"Error validating page {page_num + 1}: {str(e)}")
                     continue
+            
+            print(f"Document validation result: {document_valid}")
             
             if not document_valid:
                 pdf_document.close()
@@ -1096,7 +1103,7 @@ class PDFTextExtractionView(MethodView):
                     "entries": [],
                     "pdf_filename": file.filename or "",
                     "total_pages": total_pages
-                }, 400)
+                }), 400
             
             pages_to_extract = parse_page_range(page_range_str, total_pages)
             
