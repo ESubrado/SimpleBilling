@@ -32,8 +32,10 @@ const Navigation: React.FC = () => {
                 <ul className="flex space-x-6">
                     {pathname !== '/' && (
                         <li>
-                            <Link href="/">
-                                <span className="hover:text-blue-400 cursor-pointer text-white transition-colors px-3 py-1 rounded-full hover:bg-gray-800/50">Home</span>
+                            <Link href={pathname.startsWith("/history") ? "/" : "/"}>
+                                <span className="hover:text-blue-400 cursor-pointer text-white transition-colors px-3 py-1 rounded-full hover:bg-gray-800/50">
+                                    {pathname.startsWith("/history") ? "Add More Invoice" : "Home"}
+                                </span>
                             </Link>
                         </li>
                     )}

@@ -8,9 +8,10 @@ import IndividualDetails from "./IndividualDetails";
 import Image from "next/image";
 import { Card, CardContent, Divider, Typography, Alert, Box } from "@mui/material";
 import { useAppSelector } from "@/hooks/redux";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as React from "react";
+import config from "@/config/api";
 
 // Import interfaces and constants
 import {
@@ -21,19 +22,37 @@ import {
 
 export default function Results() {
   const router = useRouter();
-  const { data: pdfData, error } = useAppSelector((state) => state.pdf);  
+  const searchParams = useSearchParams();
+  const invoiceParam = searchParams.get("invoice");
+  const { data: pdfData, error } = useAppSelector((state) => state.pdf);
+  const [apiData, setApiData] = useState<any>(null);
+  const [loadingApi, setLoadingApi] = useState(false);
   const [countdown, setCountdown] = useState(7);   
 
-  // Redirect to home if no PDF data is available
+  // Fetch by invoice number if param exists
   useEffect(() => {
-    if (!pdfData && !error) {
+    if (invoiceParam) {
+      setLoadingApi(true);
+      fetch(`${config.backend.baseUrl}/billing-data/invoice/${encodeURIComponent(invoiceParam)}`)
+        .then(res => res.json())
+        .then(data => {
+          setApiData(data?.record?.json_data || data?.record || null);
+          setLoadingApi(false);
+        })
+        .catch(() => setLoadingApi(false));
+    }
+  }, [invoiceParam]);
+
+  // Only redirect if there is no pdfData, no invoice param, and no error
+  useEffect(() => {
+    if (!pdfData && !invoiceParam && !error) {
       const timer = setTimeout(() => {
         router.push("/");
       }, 0);
       
       return () => clearTimeout(timer);
     }
-  }, [pdfData, error, router]);
+  }, [pdfData, invoiceParam, error, router]);
 
   // Countdown and redirect on error
   useEffect(() => {
@@ -80,8 +99,8 @@ export default function Results() {
     );
   }
 
-  // Show loading if no data yet
-  if (!pdfData) {
+  // Show loading if fetching by invoice param and no data yet
+  if (invoiceParam && !pdfData && loadingApi) {
     return (
       <>
         <Navigation />
@@ -89,7 +108,25 @@ export default function Results() {
         <ScrollToTopButton />
         <div className="font-sans grid items-center justify-items-center min-h-screen px-8 py-0 pb-20 gap-16 w-full bg-black text-white">
           <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-5xl">
-            <Typography variant="h6" sx={{ color: 'white' }}>Loading PDF data...</Typography>
+            <Typography variant="h6" sx={{ color: 'white' }}>Loading invoice data...</Typography>
+          </main>
+        </div>
+      </>
+    );
+  }
+
+  // Merge: pdfData has priority, but if not present, use apiData
+  const displayData = pdfData || apiData;
+
+  if (!displayData) {
+    return (
+      <>
+        <Navigation />
+        <AnimatedBackground />
+        <ScrollToTopButton />
+        <div className="font-sans grid items-center justify-items-center min-h-screen px-8 py-0 pb-20 gap-16 w-full bg-black text-white">
+          <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-5xl">
+            <Typography variant="h6" sx={{ color: 'white' }}>No data found for this invoice.</Typography>
           </main>
         </div>
       </>
@@ -97,7 +134,7 @@ export default function Results() {
   }
 
   // Debug: Show PDF data structure
-  console.log("PDF Data from Redux:", pdfData);  
+  console.log("PDF Data from Redux:", displayData);  
 
   return (
     <>
@@ -108,7 +145,18 @@ export default function Results() {
         <main className="flex flex-col gap-[24px] row-start-2 items-center w-full max-w-5xl">
           <Typography variant="h4" component="h1" fontWeight={700} textAlign="center" sx={{ color: 'white' }}>
             Phone Bill Summary and Partitions
-          </Typography>                    
+          </Typography>
+
+          {/* Button to view history page */}
+          <div className="w-full flex justify-center mt-4">
+            <button
+              onClick={() => router.push("/history?account=" + encodeURIComponent(displayData.summary.account || ''))}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded shadow transition-colors"
+              style={{ minWidth: 180 }}
+            >
+              View Account History 
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 w-full items-stretch py-3">
             <AnimatedCard delay={0} className="md:col-span-5">
@@ -120,12 +168,12 @@ export default function Results() {
                   {/* Customer Details */}  
                   <div className="mb-4">
                     <Typography variant="body2" sx={{ color: '#9ca3af' }}>Account Number</Typography>
-                    <Typography sx={{ color: 'white' }}>{pdfData.summary.account || 'N/A'}</Typography>
+                    <Typography sx={{ color: 'white' }}>{displayData.summary.account || 'N/A'}</Typography>
                   </div>
                   
                   <div className="mb-4">
                     <Typography variant="body2" sx={{ color: '#9ca3af' }}>Invoice Number</Typography>
-                    <Typography sx={{ color: 'white' }}>{pdfData.summary.invoice || 'N/A'}</Typography>
+                    <Typography sx={{ color: 'white' }}>{displayData.summary.invoice || 'N/A'}</Typography>
                   </div>                                   
                 </CardContent>
               </Card>
@@ -138,15 +186,15 @@ export default function Results() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 justify-items-start">
                   <div>
                   <Typography variant="body2" sx={{ color: '#9ca3af' }}>Billing Period</Typography>
-                  <Typography sx={{ color: 'white' }}>{pdfData.summary.billing_period || 'N/A'}</Typography>
+                  <Typography sx={{ color: 'white' }}>{displayData.summary.billing_period || 'N/A'}</Typography>
                   </div>
                   <div>
                   <Typography variant="body2" sx={{ color: '#9ca3af' }}>Due Date</Typography>
-                  <Typography sx={{ color: 'white' }}>{pdfData.summary.due_date || 'N/A'}</Typography>
+                  <Typography sx={{ color: 'white' }}>{displayData.summary.due_date || 'N/A'}</Typography>
                   </div>
                   <div className="sm:col-span-2">
                   <Typography variant="body2" sx={{ color: '#9ca3af' }}>Total Due</Typography>
-                          <Typography variant="h5" fontWeight={700} sx={{ color: 'white' }}>{pdfData.summary.total_charges || 'N/A'}</Typography>
+                          <Typography variant="h5" fontWeight={700} sx={{ color: 'white' }}>{displayData.summary.total_charges || 'N/A'}</Typography>
                   </div>
                 </div>
                 </CardContent>
@@ -159,7 +207,7 @@ export default function Results() {
             <Typography variant="h6" fontWeight={600} sx={{ mb: 2, color: 'white' }}>
               {(() => {
                 // Check if adjustments exist in previous_balance data
-                const hasAdjustments = pdfData.summary.previous_balance.some((item: SummaryItem) => 
+                const hasAdjustments = displayData.summary.previous_balance.some((item: SummaryItem) => 
                   adjustmentChildren.includes(item.ukey) || item.ukey === 'total_adjustments'
                 );
                 
@@ -171,9 +219,9 @@ export default function Results() {
                 <CardContent>
                   <div className="space-y-2">
                     {/* Display previous balance items if they exist */}
-                    {pdfData.summary.previous_balance && pdfData.summary.previous_balance.length > 0 ? (
+                    {displayData.summary.previous_balance && displayData.summary.previous_balance.length > 0 ? (
                       (() => {
-                        const items = pdfData.summary.previous_balance;
+                        const items = displayData.summary.previous_balance;
                         const renderedItems: React.JSX.Element[] = [];
                         
                         // Separate parents and group children
@@ -353,9 +401,9 @@ export default function Results() {
                 <CardContent>
                   <div className="space-y-2">
                     {/* Display API returned money amounts with parent-child structure */}
-                    {pdfData.summary.money_amounts && pdfData.summary.money_amounts.length > 0 ? (
+                    {displayData.summary.money_amounts && displayData.summary.money_amounts.length > 0 ? (
                       (() => {
-                        const items = pdfData.summary.money_amounts;
+                        const items = displayData.summary.money_amounts;
                         const renderedItems: React.JSX.Element[] = [];
 
                         // Separate parents and group children
@@ -374,7 +422,7 @@ export default function Results() {
                             // Handle late fees for surcharges_credits child
                             const updatedChildren = children.map((child: any) => {
                               if (child.ukey === 'surcharges_credits') {
-                                const lateFees = pdfData.summary.late_fees || [];
+                                const lateFees = displayData.summary.late_fees || [];
                                 const totalLateFees = lateFees.reduce((sum: number, fee: { amount: string }) => {
                                   const amount = parseFloat(fee.amount.replace(/[\$,]/g, '')) || 0;
                                   return sum + amount;
@@ -547,7 +595,7 @@ export default function Results() {
                                     }, 0);
                                   
                                   // Add late fees to grand total
-                                  const lateFees = pdfData.summary.late_fees || [];
+                                  const lateFees = displayData.summary.late_fees || [];
                                   const totalLateFees = lateFees.reduce((sum: number, fee: { amount: string }) => {
                                     const amount = parseFloat(fee.amount.replace(/[\$,]/g, '')) || 0;
                                     return sum + amount;
@@ -581,10 +629,10 @@ export default function Results() {
           </div>   
 
           {/* Charge Distribution Visualization */}
-          <VisualDistribution pdfData={pdfData} delay={600} />
+          <VisualDistribution pdfData={displayData} delay={600} />
 
           {/* Individual Line Details */}
-          <IndividualDetails pdfData={pdfData} delay={1000} />
+          <IndividualDetails pdfData={displayData} delay={1000} />
 
           {/* PDF Processing Information Section */}
           <div className="w-full pb-3">
@@ -600,7 +648,7 @@ export default function Results() {
                       <Typography sx={{ color: 'white' }}>
                         {(() => {
                           // Try different possible filename properties
-                          const filename = pdfData.pdf_filename || pdfData.filename || pdfData.file_name || pdfData.name;
+                          const filename = displayData.pdf_filename || displayData.filename || displayData.file_name || displayData.name;
                           return filename || 'N/A';
                         })()}
                       </Typography>
@@ -608,33 +656,10 @@ export default function Results() {
                     <div>
                       <Typography variant="body2" sx={{ color: '#9ca3af' }}>Total Pages</Typography>
                       <Typography sx={{ color: 'white' }}>
-                        {pdfData.total_pages || 'N/A'}
+                        {displayData.total_pages || 'N/A'}
                       </Typography>
                     </div>
-                  </div>
-
-                  {/* Extracted Text Section */}
-                  <div>
-                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 1 }}>Extracted JSON Text</Typography>
-                    <Box
-                      component="pre"
-                      sx={{
-                        backgroundColor: '#111827',
-                        color: '#e5e7eb',
-                        padding: 2,
-                        borderRadius: 1,
-                        fontSize: '0.875rem',
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordWrap: 'break-word',
-                        maxHeight: '400px',
-                        overflowY: 'auto',
-                        border: '1px solid #374151'
-                      }}
-                    >
-                      {pdfData.text || 'No text extracted'}
-                    </Box>
-                  </div>
+                  </div>                  
                 </CardContent>
               </Card>
             </AnimatedCard>

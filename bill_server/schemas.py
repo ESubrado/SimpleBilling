@@ -80,3 +80,21 @@ class PDFTextExtractionSchema(Schema):
     entries = fields.List(fields.Nested(ContactEntrySchema), required=True)
     keywords_used = fields.List(fields.Str(), required=True)
     summary = fields.Nested(SummarySchema, required=True)
+
+# Add these new schemas for database operations
+class BillingDataSchema(Schema):
+    success = fields.Bool()
+    data = fields.Dict()
+    message = fields.Str()
+
+class BillingAccountsSchema(Schema):
+    success = fields.Bool()
+    accounts = fields.List(fields.Dict())
+    total_count = fields.Int()
+    message = fields.Str()
+
+class DeleteBillingDataSchema(Schema):
+    success = fields.Bool()
+    deleted = fields.Bool()
+    message = fields.Str()
+    error = fields.Str()
