@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useLayoutEffect, useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -100,7 +100,7 @@ export default function HistoryPage() {
     }, [noData, router]);
 
     // create charts after DOM mounts and clean up on unmount
-    useLayoutEffect(() => {
+    useEffect(() => {
         const roots: am5.Root[] = [];
 
         const timeout = setTimeout(() => {
