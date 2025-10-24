@@ -7,6 +7,7 @@ import json
 import os
 import datetime 
 from schemas import PDFTextExtractionSchema
+from .database_utils import BillingDatabase
 
 # Create blueprint
 blp = Blueprint(
@@ -15,6 +16,9 @@ blp = Blueprint(
     url_prefix="/",
     description="PDF Text Extraction API operations"
 )
+
+# Initialize database
+db = BillingDatabase()
 
 ## Utility Functions from JSON
 def load_provider_settings(provider="verizon"):
@@ -1033,6 +1037,7 @@ class PDFTextExtractionView(MethodView):
             page_range_str = request.form.get('pageRange', '')
             keywords_str = request.form.get('keywords', '')
             provider = request.form.get('provider', 'verizon')  # Default to verizon
+            save_to_db = request.form.get('saveToDatabase', 'false').lower() == 'true'  # New parameter
             
             if file.filename == '':
                 return jsonify({
@@ -1079,7 +1084,7 @@ class PDFTextExtractionView(MethodView):
             for page_num in range(pages_to_check):
                 try:
                     page = pdf_document.load_page(page_num)
-                    page_text = page.get_text().lower()
+                    page_text = page.get_text().lower();
                     
                     # Check for any of the Verizon keywords
                     if any(keyword.lower() in page_text for keyword in verizon_keywords):
@@ -1169,7 +1174,6 @@ class PDFTextExtractionView(MethodView):
             for entry in entries:
                 phone = entry['phone']
                 name = entry['text']
-                
                 merged_entry = {
                     "phone": phone,
                     "name": name,
@@ -1249,8 +1253,8 @@ class PDFTextExtractionView(MethodView):
             if previous_balance_data and isinstance(previous_balance_data, dict) and previous_balance_data.get("previous_balance_amounts"):
                 summary["previous_balance"] = previous_balance_data["previous_balance_amounts"]
             
-            ## Return response
-            return jsonify({
+            # Prepare response data
+            response_data = {
                 "success": True,
                 "message": f"Found {len(entries)} contact(s) with {contacts_with_money} having money amounts",
                 "text": stringified_entries,
@@ -1260,7 +1264,96 @@ class PDFTextExtractionView(MethodView):
                 "pdf_filename": file.filename or "",
                 "total_pages": total_pages,
                 "provider": provider
-            }), 200
+            }
+            
+            # Save to database if requested and account number is available
+            database_result = None
+            if save_to_db and summary.get("account"):
+                try:
+                    # Use invoice as invoice_number if present
+                    invoice_number = summary.get("invoice")
+                    
+                    # Get existing records for account (may include multiple invoices)
+                    existing_records = db.get_billing_data(summary["account"])
+                    
+                    # Determine if invoice already exists
+                    existing_match = None
+                    if invoice_number:
+                        for rec in existing_records:
+                            if rec.get("invoice_number") and str(rec.get("invoice_number")) == str(invoice_number):
+                                existing_match = rec
+                                break
+                    
+                    if existing_match:
+                        # Invoice already exists -> report exists
+                        response_data["database"] = {
+                            "saved": True,
+                            "action": "exists",
+                            "record_id": existing_match.get("id"),
+                            "account_number": summary["account"],
+                            "invoice_number": existing_match.get("invoice_number")
+                        }
+                        response_data["message"] += f" | Account {summary['account']} invoice {existing_match.get('invoice_number')} already exists in database"
+                    else:
+                        # Prepare data to save (complete response without success/message)
+                        data_to_save = {
+                            "entries": merged_entries,
+                            "summary": summary,
+                            "pdf_filename": file.filename or "",
+                            "total_pages": total_pages,
+                            "provider": provider,
+                            "keywords_used": all_keywords_used,
+                            "extraction_date": datetime.datetime.now().isoformat(),
+                            "contacts_found": len(entries),
+                            "contacts_with_money": contacts_with_money
+                        }
+                        
+                        database_result = db.save_billing_data(summary["account"], data_to_save, invoice_number=invoice_number)
+                        
+                        if database_result and database_result.get("success"):
+                            response_data["database"] = {
+                                "saved": True,
+                                "action": database_result.get("action"),
+                                "record_id": database_result.get("id"),
+                                "account_number": summary["account"],
+                                "invoice_number": invoice_number
+                            }
+                            response_data["message"] += f" | Data {database_result.get('action')} in database"
+                        else:
+                            # Save failed -> include error details and do not return DB-only object
+                            response_data["database"] = {
+                                "saved": False,
+                                "error": database_result.get("error") if database_result else "Unknown error"
+                            }
+                            response_data["message"] += " | Failed to save to database"
+                
+                except Exception as db_error:
+                    print(f"Database save error: {str(db_error)}")
+                    response_data["database"] = {
+                        "saved": False,
+                        "error": str(db_error)
+                    }
+                    response_data["message"] += " | Database save failed"
+            elif save_to_db and not summary.get("account"):
+                response_data["database"] = {
+                    "saved": False,
+                    "error": "No account number found in bill summary"
+                }
+                response_data["message"] += " | Cannot save: No account number found"
+            
+            # If a DB save succeeded or invoice existed, return only the database object
+            db_info = response_data.get("database", {})
+            if db_info.get("saved") is True:
+                only_db_response = {
+                    "saved": True,
+                    "action": db_info.get("action"),
+                    "record_id": db_info.get("record_id"),
+                    "account_number": db_info.get("account_number"),
+                    "invoice_number": db_info.get("invoice_number")
+                }
+                return jsonify(only_db_response), 200
+            # Otherwise return the original full response
+            return jsonify(response_data), 200
             
         except Exception as e:
             import traceback
@@ -1275,4 +1368,170 @@ class PDFTextExtractionView(MethodView):
                 "entries": [],
                 "pdf_filename": getattr(file, 'filename', '') if 'file' in locals() else "",
                 "total_pages": total_pages if 'total_pages' in locals() else 0
+            }), 500
+
+# Add new routes for database operations
+@blp.route("/billing-data/<account_number>")
+class BillingDataView(MethodView):
+
+    def get(self, account_number):
+        """Retrieve billing data for a specific account (returns all invoices for that account)"""
+        try:
+            data = db.get_billing_data(account_number)
+            if data:
+                for invoice in data:
+                    # Safely get json_data as dict
+                    json_data = invoice.get("json_data", {})
+                    if not isinstance(json_data, dict):
+                        json_data = {}
+
+                    # Get summary from json_data if available, else from invoice
+                    summary = json_data.get("summary", invoice.get("summary", {}))
+
+                    # total_charges
+                    total_charges = summary.get("total_charges")
+                    if not total_charges:
+                        total_charges_entry = next(
+                            (item for item in summary.get("money_amounts", []) if item.get("ukey") == "total_charges"),
+                            None
+                        )
+                        total_charges = total_charges_entry.get("amount") if total_charges_entry else None
+                    invoice["total_charges"] = total_charges
+
+                    # billing_period
+                    billing_period = summary.get("billing_period")
+                    if not billing_period:
+                        billing_period_entry = next(
+                            (item for item in summary.get("money_amounts", []) if item.get("ukey") == "billing_period"),
+                            None
+                        )
+                        billing_period = billing_period_entry.get("amount") if billing_period_entry else None
+                    invoice["billing_period"] = billing_period
+
+                    # Also keep in summary for compatibility
+                    if isinstance(invoice.get("summary"), dict):
+                        invoice["summary"]["total_charges"] = total_charges
+                        invoice["summary"]["billing_period"] = billing_period
+
+                    # Add entries from json_data if present
+                    # Only include name, phone, and "Total Current Charges" amount
+                    filtered_entries = []
+                    name_phone_map = {}
+                    name_count = {}
+
+                    for entry in json_data.get("entries", []):
+                        name = entry.get("name") or entry.get("text")
+                        phone = entry.get("phone")
+                        total_current_charges = None
+                        for money in entry.get("money_amounts", []):
+                            if money.get("keyword") == "Total Current Charges":
+                                total_current_charges = money.get("amount")
+                                break
+
+                        # Track name and phone combinations
+                        if name not in name_phone_map:
+                            name_phone_map[name] = set()
+                        name_phone_map[name].add(phone)
+
+                        # Count unique phones per name
+                        name_count[name] = len(name_phone_map[name])
+
+                    # Second pass to build filtered_entries with roman numeral if needed
+                    for entry in json_data.get("entries", []):
+                        name = entry.get("name") or entry.get("text")
+                        phone = entry.get("phone")
+                        total_current_charges = None
+                        for money in entry.get("money_amounts", []):
+                            if money.get("keyword") == "Total Current Charges":
+                                total_current_charges = money.get("amount")
+                                break
+
+                        display_name = name
+                        if name_count[name] > 1:
+                            # If this name has multiple phones, append II for all but the first phone
+                            phones = list(name_phone_map[name])
+                            if phones.index(phone) > 0:
+                                display_name = f"{name} II"
+
+                        filtered_entries.append({
+                            "name": display_name,
+                            "phone": phone,
+                            "total_current_charges": total_current_charges
+                        })
+                    invoice["entries"] = filtered_entries
+
+                return jsonify({
+                    "success": True,
+                    "account_number": account_number,
+                    "invoices": data,
+                    "total_invoices": len(data)
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": "Account not found or no invoices available"
+                }), 404
+
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Error retrieving data: {str(e)}"
+            }), 500
+    
+    def delete(self, account_number):
+        """Delete billing data for a specific account (removes all invoices for that account)"""
+        try:
+            result = db.delete_billing_data(account_number)
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify(result), 500
+                
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Error deleting data: {str(e)}"
+            }), 500
+
+# New endpoint: get by invoice number
+@blp.route("/billing-data/invoice/<invoice_number>")
+class BillingDataByInvoiceView(MethodView):
+    def get(self, invoice_number):
+        """Retrieve a billing record by invoice number"""
+        try:
+            data = db.get_billing_data_by_invoice(invoice_number)
+            if data:
+                return jsonify({
+                    "success": True,
+                    "invoice_number": invoice_number,
+                    "record": data
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": "Invoice not found"
+                }), 404
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Error retrieving invoice data: {str(e)}"
+            }), 500
+
+@blp.route("/billing-accounts")
+class BillingAccountsView(MethodView):
+    # ...existing code...
+    def get(self):
+        """List all accounts in the database"""
+        try:
+            accounts = db.list_all_accounts(include_json=True)
+            return jsonify({
+                "success": True,
+                "accounts": accounts,
+                "total_count": len(accounts)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Error listing accounts: {str(e)}"
             }), 500

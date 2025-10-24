@@ -2,7 +2,7 @@
 import Navigation from "@/components/navigation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useAppDispatch } from "@/hooks/redux";
@@ -15,6 +15,8 @@ export default function Home() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [hasAccountNumbers, setHasAccountNumbers] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
   //used to get summary and contact info from pdf
   const [pageRange, setPageRange] = useState<string>("1-7"); // Default to first 7 pages
@@ -33,6 +35,7 @@ export default function Home() {
       try {
         const formData = new FormData();
         formData.append("file", selectedFile);
+        formData.append("saveToDatabase", 'true');
         
         // Add page range if provided
         if (pageRange.trim()) {
@@ -51,9 +54,39 @@ export default function Home() {
           // Check if the response contains error details from server
           const serverMessage = json.message || `HTTP error! status: ${response.status}`;
           throw new Error(serverMessage);
-        }        
+        }
 
-        dispatch(setPdfData(json));       
+        // If server returned only DB info (saved/exists) prefer invoice lookup
+        if (json && json.saved === true) {
+          // If invoice number is present, fetch by invoice for the full saved record
+          const invoiceNumber = json.invoice_number || json.invoiceNumber || json.invoice;
+          if (invoiceNumber) {
+            try {
+              if (hasAccountNumbers) {
+                // If you want to use the first account number, fetch it here
+                const res = await fetch(`${config.backend.baseUrl}/billing-accounts`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
+                  const firstAccount = data.accounts[0].account_number;
+                  router.push(`/history?account=${encodeURIComponent(firstAccount)}`);
+                  return;
+                }
+              }
+              router.push(`/results?invoice=${encodeURIComponent(invoiceNumber)}`); // Route to results with invoice param
+            } catch (err) {
+              console.error("Error fetching invoice data:", err);
+              dispatch(setPdfData(json));
+              router.push("/results"); // Fallback: route to results without param
+            }
+          } else {
+            // No invoice/account info — dispatch the DB object so UI can show status
+            dispatch(setPdfData(json));
+          }
+        } else {
+          // Normal flow - server returned full extraction object
+          dispatch(setPdfData(json));
+        }
+
         setSelectedFile(null);
         setPageRange("");     
            
@@ -71,10 +104,32 @@ export default function Home() {
         }
       } finally {
         setIsLocalProcessing(false);       
-        router.push("/results");
+        //router.push("/results");
       }
     }    
   };
+
+  // Fetch account numbers for conditional button
+  useEffect(() => {
+    async function fetchAccountNumbers() {
+      try {
+        const res = await fetch(
+          `${config.backend.baseUrl}/billing-accounts`
+        );
+        const data = await res.json();
+        if (data.success && Array.isArray(data.accounts)) {
+          setHasAccountNumbers(data.accounts.length > 0);
+        } else {
+          setHasAccountNumbers(false);
+        }
+      } catch (err) {
+        setHasAccountNumbers(false);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    }
+    fetchAccountNumbers();
+  }, []);
 
   return (
     <>
@@ -106,7 +161,7 @@ export default function Home() {
               color="primary"
               onClick={handleGoToResults}
               sx={{ 
-                mt: 5, 
+                mt: 3, 
                 width: "100%",
                 backgroundColor: "#374151",
                 color: "white",
@@ -121,8 +176,18 @@ export default function Home() {
               disabled={!selectedFile || isLocalProcessing}
               startIcon={isLocalProcessing ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              {isLocalProcessing ? "Processing PDF..." : "View Summarized Bill"}
+              {isLocalProcessing ? "Processing PDF..." : (!loadingAccounts && hasAccountNumbers) ?"Add Invoice" : "View Summarized Bill"}
             </Button>
+            {/* Show the button if there are account numbers */}
+            {!loadingAccounts && hasAccountNumbers && (              
+              <button
+                onClick={() => router.push("/landing")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded shadow transition-colors"
+                style={{ width: "100%" }}
+              >
+                View Available Account Numbers
+            </button>
+            )}
           </div>
         </main>
         <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
