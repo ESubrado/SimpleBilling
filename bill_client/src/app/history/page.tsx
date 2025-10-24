@@ -388,7 +388,7 @@ export default function HistoryPage() {
             <AnimatedBackground />
             <ScrollToTopButton />
             <div className="font-sans grid items-center justify-items-center min-h-screen px-8 pt-12 pb-20 gap-16 w-full bg-black text-white">
-                <main className="flex flex-col gap-[24px] row-start-2 items-center w-full max-w-screen-2xl">
+                <main className="flex flex-col gap-6 row-start-2 items-center w-full max-w-screen-2xl">
                     {noData && (
                         <div className="bg-red-600 text-white px-6 py-3 rounded mb-4 text-center font-semibold">
                             No data available. Redirecting to home page in {countdown} seconds...
