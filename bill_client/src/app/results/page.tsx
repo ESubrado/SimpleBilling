@@ -83,7 +83,7 @@ export default function Results() {
         <AnimatedBackground />
         <ScrollToTopButton />
         <div className="font-sans grid items-center justify-items-center min-h-screen px-8 py-0 pb-20 gap-16 w-full bg-black text-white">
-          <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-5xl">
+          <main className="flex flex-col gap-6 row-start-1 items-center w-full max-w-5xl">
             <Alert severity={isInvalidDocument ? "info" : "error"} sx={{ width: '100%', maxWidth: '500px' }}>
               <Typography variant="h6">
                 {isInvalidDocument ? "Document Processing Issue" : "PDF Processing Error"}
@@ -107,7 +107,7 @@ export default function Results() {
         <AnimatedBackground />
         <ScrollToTopButton />
         <div className="font-sans grid items-center justify-items-center min-h-screen px-8 py-0 pb-20 gap-16 w-full bg-black text-white">
-          <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-5xl">
+          <main className="flex flex-col gap-6 row-start-1 items-center w-full max-w-5xl">
             <Typography variant="h6" sx={{ color: 'white' }}>Loading invoice data...</Typography>
           </main>
         </div>
@@ -125,7 +125,7 @@ export default function Results() {
         <AnimatedBackground />
         <ScrollToTopButton />
         <div className="font-sans grid items-center justify-items-center min-h-screen px-8 py-0 pb-20 gap-16 w-full bg-black text-white">
-          <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-5xl">
+          <main className="flex flex-col gap-6 row-start-1 items-center w-full max-w-5xl">
             <Typography variant="h6" sx={{ color: 'white' }}>No data found for this invoice.</Typography>
           </main>
         </div>
@@ -142,7 +142,7 @@ export default function Results() {
       <AnimatedBackground />
       <ScrollToTopButton />
       <div className="font-sans grid items-center justify-items-center min-h-screen px-8 pt-12 pb-20 gap-16 w-full bg-black text-white">
-        <main className="flex flex-col gap-[24px] row-start-2 items-center w-full max-w-5xl">
+        <main className="flex flex-col gap-6 row-start-2 items-center w-full max-w-5xl">
           <Typography variant="h4" component="h1" fontWeight={700} textAlign="center" sx={{ color: 'white' }}>
             Phone Bill Summary and Partitions
           </Typography>
@@ -667,7 +667,7 @@ export default function Results() {
         </main>
 
         {/* Footer */}
-        <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+        <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
             <a
             className="flex items-center gap-2 hover:underline hover:underline-offset-4 text-white hover:text-gray-300"
             href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
