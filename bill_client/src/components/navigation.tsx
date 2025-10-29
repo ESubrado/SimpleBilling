@@ -42,7 +42,13 @@ const Navigation: React.FC = () => {
                             <span className="hover:text-blue-400 cursor-pointer text-white transition-colors px-3 py-1 rounded-full hover:bg-gray-800/50">About</span>
                         </Link>
                     </li>
-                    {/* Add more navigation links as needed */}
+                    {pathname !== '/login' && (
+                        <li>
+                            <Link href="/login">
+                                <span className="hover:text-blue-400 cursor-pointer text-white transition-colors px-3 py-1 rounded-full hover:bg-gray-800/50">Login</span>
+                            </Link>
+                        </li>
+                    )}
                 </ul>
             </div>
         </nav>

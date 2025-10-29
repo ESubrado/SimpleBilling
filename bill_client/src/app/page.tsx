@@ -16,6 +16,7 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+
   //used to get summary and contact info from pdf
   const [pageRange, setPageRange] = useState<string>("1-7"); // Default to first 7 pages
  
@@ -26,54 +27,66 @@ export default function Home() {
   };  
 
   const handleGoToResults = async () => {
-    if (selectedFile) {      
-      dispatch(clearPdfData());
-      setIsLocalProcessing(true);
+    if (!selectedFile) return;
 
-      try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        
-        // Add page range if provided
-        if (pageRange.trim()) {
-          formData.append("pageRange", pageRange.trim());
-        }
-       
-        // Use bill_server extract-text endpoint
-        const response = await fetch(`${config.backend.baseUrl}${config.backend.endpoints.extractText}`, {
-          method: "POST",
-          body: formData,
-        });
+    // Check for session (token in localStorage)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      alert('You must be logged in to analyze a bill.');
+      router.push('/login');
+      return;
+    }
 
-        const json = await response.json();
+    dispatch(clearPdfData());
+    setIsLocalProcessing(true);
 
-        if (!response.ok) {
-          // Check if the response contains error details from server
-          const serverMessage = json.message || `HTTP error! status: ${response.status}`;
-          throw new Error(serverMessage);
-        }        
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-        dispatch(setPdfData(json));       
-        setSelectedFile(null);
-        setPageRange("");     
-           
-      } catch (error ) {
-        console.error("Error processing PDF:", error);
-        
-        // Check if it's an invalid document error
-        const errorMessage = error instanceof Error ? error.message : "Failed to process PDF";
-        const isInvalidDocument = errorMessage.includes("Invalid document");
-
-        if (isInvalidDocument) {
-          dispatch(setError("Invalid document: This application currently supports Verizon bills only. Other carriers will be added soon."));
-        } else {
-          dispatch(setError(errorMessage));
-        }
-      } finally {
-        setIsLocalProcessing(false);       
-        router.push("/results");
+      // Add page range if provided
+      if (pageRange.trim()) {
+        formData.append("pageRange", pageRange.trim());
       }
-    }    
+
+      // Use bill_server extract-text endpoint
+      const response = await fetch(`${config.backend.baseUrl}${config.backend.endpoints.extractText}`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          // Attach token if needed by backend
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        // Check if the response contains error details from server
+        const serverMessage = json.message || `HTTP error! status: ${response.status}`;
+        throw new Error(serverMessage);
+      }
+
+      dispatch(setPdfData(json));
+      setSelectedFile(null);
+      setPageRange("");
+
+    } catch (error) {
+      console.error("Error processing PDF:", error);
+
+      // Check if it's an invalid document error
+      const errorMessage = error instanceof Error ? error.message : "Failed to process PDF";
+      const isInvalidDocument = errorMessage.includes("Invalid document");
+
+      if (isInvalidDocument) {
+        dispatch(setError("Invalid document: This application currently supports Verizon bills only. Other carriers will be added soon."));
+      } else {
+        dispatch(setError(errorMessage));
+      }
+    } finally {
+      setIsLocalProcessing(false);
+      router.push("/results");
+    }
   };
 
   return (
@@ -83,7 +96,7 @@ export default function Home() {
       <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-black text-white">
         <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-center">
           <h1 className="text-4xl font-bold text-center sm:text-left text-white">
-           Welcome to Simplify Bill!
+            Welcome to Simplify Bill!
           </h1>
           <h1 className="text-xl font-bold text-center sm:text-left text-white">
             See key details — totals, dates, and payments — in one easy view. Please click below to upload and analyze your bill.
@@ -148,7 +161,6 @@ export default function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-
             <Image
               aria-hidden
               src="/globe.svg"
