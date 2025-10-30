@@ -1,7 +1,8 @@
 Flask==3.1.2
 flask-smorest==0.46.2
 flask-cors==6.0.1
-marshmallow==4.0.1
+strawberry-graphql
+psycopg2
 PyMuPDF==1.24.12
 python-dotenv==1.1.1
 requests==2.32.5
