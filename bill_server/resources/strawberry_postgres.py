@@ -1,11 +1,8 @@
 """
 This module contains Strawberry GraphQL resolvers for interacting with the PostgreSQL server.
 """
-
-
 import strawberry
 from typing import List, Optional
-from flask import Flask, request, jsonify
 
 import psycopg2
 import os
@@ -23,7 +20,6 @@ def get_connection():
         port=os.getenv("DB_PORT")
     )
 
-
 # User Strawberry type
 @strawberry.type
 class User:
@@ -31,7 +27,6 @@ class User:
     username: str
     email: str
     description: Optional[str] = None
-
 
 # Example query resolver
 @strawberry.type
@@ -46,28 +41,19 @@ class Query:
         conn.close()
         return [User(id=row[0], username=row[1], email=row[2], description=row[3]) for row in rows]
 
+    @strawberry.field
+    def all200_users(self) -> List[User]:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, email, description FROM users LIMIT 200")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [User(id=row[0], username=row[1], email=row[2], description=row[3]) for row in rows]
+
 schema = strawberry.Schema(query=Query)
 
-# Flask route logic as a function (not decorated)
-def all200_users():
-    from flask import jsonify
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, username, email, description FROM users LIMIT 200")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    users = [
-        {
-            "id": row[0],
-            "username": row[1],
-            "email": row[2],
-            "description": row[3]
-        }
-        for row in rows
-    ]
-    return jsonify({"users": users})
-
+# Flask route logic as a function to get users by query (not decorated)
 def users_query():
     from flask import request, jsonify  # ensure correct context
     query = request.args.get("query")
@@ -80,5 +66,10 @@ def users_query():
     if result.data:
         response["data"] = result.data
     return jsonify(response)
+
+
+
+
+
 
 

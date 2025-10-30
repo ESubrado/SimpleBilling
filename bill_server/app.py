@@ -2,9 +2,8 @@ from flask import Flask, jsonify, request
 from flask_smorest import Api
 from flask_cors import CORS
 from resources.verizonbus_api import blp as pdf_text_extraction_blueprint
-
-# Import Strawberry schema for GraphQL
-from resources.strawberry_postgres import schema, all200_users, users_query
+from resources.strawberry_postgres import schema
+from strawberry.flask.views import GraphQLView
 
 app = Flask(__name__)
 
@@ -22,12 +21,18 @@ app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-
 # Initialize Flask-Smorest API
 api = Api(app)
 
-
 # Register blueprints
 api.register_blueprint(pdf_text_extraction_blueprint)
 
-# Import and register the /users route from strawberry_postgres
-app.add_url_rule("/users", view_func=all200_users, methods=["GET"])
+# Add this after your Flask app is created
+app.add_url_rule(
+    "/users",
+    view_func=GraphQLView.as_view("users", schema=schema),
+    methods=["GET", "POST"]
+)
+
+# Register the /users route from strawberry_postgres, outside of the GraphQL endpoint
+from resources.strawberry_postgres import users_query
 app.add_url_rule("/usersbyquery", view_func=users_query, methods=["GET"])
 
 @app.route("/")
